@@ -8,11 +8,17 @@ from machine import Pin
 
 from states import State
 
+# These are taken from secrets.py.
+# Look at the README for more information.
 ssid = secrets.WIFI_SSID
 password = secrets.WIFI_PASSWORD
 
-assert ssid is not None
-assert password is not None
+assert (
+    ssid is not None
+), "Please set the WIFI_SSID in secrets.py. Look at the README for more information."
+assert (
+    password is not None
+), "Please set the WIFI_PASSWORD in secrets.py. Look at the README for more information."
 
 
 def connect() -> str:
@@ -43,21 +49,11 @@ def open_socket(ip: str) -> socket:
 
 
 def webpage(state: str) -> str:
-    # Template HTML
-    html = f"""
-            <!DOCTYPE html>
-            <html>
-            <body>
-                <form action="./happy">
-                <input type="submit" value="Be Happy" />
-                </form>
-                <form action="./sad">
-                <input type="submit" value="Be Sad" />
-                </form>
-                <p><pre>{state}</pre></p>
-            </body>
-            </html>
-            """
+    with open("index.html", "r") as f:
+        html = f.read()
+
+        html = html.replace("{{ state }}", state)
+
     return str(html)
 
 
@@ -67,6 +63,10 @@ def serve(connection):
 
     # Start a web server
     state = State.HAPPY
+
+    # Status indicator to indicate that the server is running
+    pico_led.off()  # Sometimes need to turn it off first
+    pico_led.on()
 
     while True:
         client = connection.accept()[0]
@@ -80,11 +80,9 @@ def serve(connection):
             pass
 
         if request == "/happy?":
-            pico_led.on()
             state = State.HAPPY
             print("Happy")
         elif request == "/sad?":
-            pico_led.off()
             state = State.SAD
             print("Sad")
 
